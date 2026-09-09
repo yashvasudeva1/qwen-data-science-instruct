@@ -1,0 +1,38 @@
+{
+  "base_model": "Qwen/Qwen2.5-3B-Instruct",
+  "lora_adapter": "/kaggle/input/datasets/yashvasudeva/qwen-model",
+  "dataset": "ed001/ds-coder-instruct-v1",
+  "evaluation_examples": 100,
+  "metrics": {
+    "rouge_l": {
+      "base": 0.25353243526653846,
+      "fine_tuned": 0.4231206521056932,
+      "absolute_change": 0.16958821683915476,
+      "percent_change": 66.89014628872508
+    },
+    "bleu": {
+      "base": 0.08549692349552657,
+      "fine_tuned": 0.17910778955563683,
+      "absolute_change": 0.09361086606011026,
+      "percent_change": 109.49033278958657
+    },
+    "semantic_similarity": {
+      "base": 0.7001269656419754,
+      "fine_tuned": 0.7883172661066056,
+      "absolute_change": 0.08819030046463017,
+      "percent_change": 12.596329636263166
+    },
+    "composite_score": {
+      "base": 0.44322259810005454,
+      "fine_tuned": 0.5569163865961382,
+      "absolute_change": 0.11369378849608364,
+      "percent_change": 25.65162267976644
+    }
+  },
+  "win_tie_loss": {
+    "fine_tuned_wins": 86,
+    "ties": 0,
+    "base_wins": 14,
+    "fine_tuned_win_rate": 86.0
+  }
+}
