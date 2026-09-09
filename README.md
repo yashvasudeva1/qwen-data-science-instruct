@@ -37,36 +37,21 @@ Our evaluation framework compared the fine-tuned model's outputs against the bas
 
 ### Visualizing the Improvements
 
-#### 1. Overall Comparison & Win Rate
-The fine-tuned model consistently outperforms the base model, achieving an **86% win rate** (i.e., the fine-tuned model scored higher than the base model on 86 out of 100 test cases).
+#### 1. Base vs. Fine-tuned Comparison
+This chart highlights the exact score improvements across code quality and semantic metrics, alongside a Win/Loss evaluation matrix.
 
 <p align="center">
-  <img src="results/charts/01_overall_comparison.png" width="48%">
-  <img src="results/charts/03_win_loss_tie.png" width="48%">
+  <img src="results/charts/12_base_vs_finetuned_comparison.png" width="100%">
 </p>
 
-#### 2. Percentage Improvements across Metrics
-BLEU score (measuring exact n-gram overlap, critical for accurate code generation) saw a massive **109.5% improvement**, while ROUGE-L (measuring structural similarity to the ground truth) grew by **66.9%**.
+#### 2. Model Evaluation Metrics
+A breakdown of the fine-tuned model's absolute performance and the relative percentage improvement over the base model.
 
 <p align="center">
-  <img src="results/charts/02_percentage_improvement.png" width="80%">
+  <img src="results/charts/13_model_evaluation_metrics.png" width="100%">
 </p>
 
-#### 3. Score Distributions
-The distribution curves clearly highlight how the fine-tuned model's responses shifted towards higher quality (a distinct rightward shift in density).
-
-<p align="center">
-  <img src="results/charts/04_score_distribution.png" width="80%">
-</p>
-
-#### 4. Base vs. Fine-tuned Performance Scatter
-Most data points lie well above the diagonal line, indicating that the fine-tuned model outperformed the base model on the vast majority of individual test cases.
-
-<p align="center">
-  <img src="results/charts/05_base_vs_finetuned_scatter.png" width="80%">
-</p>
-
-> **Note:** 10 additional deep-dive charts (heatmaps, boxplots, cumulative distributions) are available in the `results/charts/` directory!
+> **Note:** Additional deep-dive charts (heatmaps, boxplots, cumulative distributions) are available in the `results/charts/` directory!
 
 ---
 
