@@ -327,7 +327,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* Interactive Showcase Section */}
-        <section id="interactive-demo" className="py-16 sm:py-20 bg-white border-y border-slate-200/80">
+        <section id="interactive-demo" className="py-16 sm:py-20 border-y border-slate-200/80">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-12">
               <span className="text-xs font-mono tracking-wider text-blue-600 uppercase font-semibold">
@@ -528,7 +528,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* Specifications & Comparison Table */}
-        <section id="benchmarks" className="py-16 sm:py-20 bg-white border-t border-slate-200/80">
+        <section id="benchmarks" className="py-16 sm:py-20 border-t border-slate-200/80">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <span className="text-xs font-mono tracking-wider text-slate-500 uppercase font-semibold">
@@ -633,7 +633,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </main>
 
       {/* Editorial Footer */}
-      <footer className="border-t border-slate-200/70 bg-white py-12">
+      <footer className="border-t border-slate-200/70 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <VegapunkLogo variant="full" size={24} />
