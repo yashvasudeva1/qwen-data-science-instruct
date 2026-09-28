@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import axios from 'axios';
 
 dotenv.config();
 
@@ -60,46 +61,67 @@ async function startServer() {
           })),
         ];
 
-        let hfResponse: Response | null = null;
+        let hfData: any = null;
+        let isSuccess = false;
+        let statusCode = 500;
+        let errText = '';
+
         try {
-          hfResponse = await fetch(`https://router.huggingface.co/hf-inference/v1/chat/completions`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${hfToken.trim()}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+          const res = await axios.post(
+            `https://router.huggingface.co/hf-inference/v1/chat/completions`,
+            {
               model: hfRepo.trim(),
               messages: hfMessages,
               max_tokens: 2048,
               temperature: 0.6,
-            }),
-          });
-        } catch (e) {
-          console.warn('Router API failed with network error, falling back to direct model API', e);
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${hfToken.trim()}`,
+                'Content-Type': 'application/json',
+              },
+              timeout: 30000,
+            }
+          );
+          hfData = res.data;
+          isSuccess = true;
+        } catch (e: any) {
+          console.warn('Router API failed, falling back to direct model API', e.message);
+          statusCode = e.response?.status || 500;
+          errText = e.response?.data ? JSON.stringify(e.response.data) : e.message;
         }
 
         // If router is not supported for this repo or threw a network error, fallback to direct HF inference endpoint
-        if (!hfResponse || !hfResponse.ok) {
-          hfResponse = await fetch(`https://api-inference.huggingface.co/models/${hfRepo.trim()}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${hfToken.trim()}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              inputs: `${hfSystemPrompt}\n\nUser: ${userQuery}\n\nVegapunk DS:`,
-              parameters: {
-                max_new_tokens: 1500,
-                return_full_text: false,
-                temperature: 0.6,
+        if (!isSuccess) {
+          try {
+            const res = await axios.post(
+              `https://api-inference.huggingface.co/models/${hfRepo.trim()}`,
+              {
+                inputs: `${hfSystemPrompt}\n\nUser: ${userQuery}\n\nVegapunk DS:`,
+                parameters: {
+                  max_new_tokens: 1500,
+                  return_full_text: false,
+                  temperature: 0.6,
+                },
               },
-            }),
-          });
+              {
+                headers: {
+                  'Authorization': `Bearer ${hfToken.trim()}`,
+                  'Content-Type': 'application/json',
+                },
+                timeout: 30000,
+              }
+            );
+            hfData = res.data;
+            isSuccess = true;
+          } catch (e: any) {
+            console.warn(`Hugging Face inference error:`, e.message);
+            statusCode = e.response?.status || 500;
+            errText = e.response?.data ? JSON.stringify(e.response.data) : e.message;
+          }
         }
 
-        if (hfResponse.ok) {
-          const hfData = await hfResponse.json();
+        if (isSuccess && hfData) {
           let generatedText = '';
 
           if (hfData.choices && hfData.choices[0]?.message?.content) {
@@ -122,10 +144,8 @@ async function startServer() {
             });
           }
         } else {
-          const errText = await hfResponse.text();
-          console.warn(`Hugging Face inference error (${hfResponse.status}):`, errText);
           
-          if (hfResponse.status === 503 && errText.toLowerCase().includes('loading')) {
+          if (statusCode === 503 && errText.toLowerCase().includes('loading')) {
             return res.status(503).json({
               error: 'The model is currently waking up on Hugging Face (Cold Start). Please try again in about 30 seconds.',
               type: 'loading',
@@ -133,7 +153,7 @@ async function startServer() {
           }
 
           return res.status(500).json({
-            error: `Hugging Face API Error (${hfResponse.status}): ${errText}`,
+            error: `Hugging Face API Error (${statusCode}): ${errText}`,
           });
         }
       } catch (hfErr: any) {
