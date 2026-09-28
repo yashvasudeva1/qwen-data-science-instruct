@@ -100,6 +100,15 @@ def load_model_and_tokenizer():
     # Step 1: Read base model ID from adapter config
     print(f"\n[1/4] Reading adapter config from '{ADAPTER_MODEL_ID}'...")
     base_model_id = read_base_model_from_adapter(ADAPTER_MODEL_ID, HF_TOKEN)
+    device = detect_device()
+    
+    # CRITICAL FIX FOR CPU (e.g. Hugging Face Spaces free tier):
+    # If the adapter was trained on a 4-bit unsloth model, we cannot load those 4-bit weights 
+    # onto a CPU because bitsandbytes requires a GPU. We must swap to the unquantized base model.
+    if device == "cpu" and "unsloth" in base_model_id and "bnb-4bit" in base_model_id:
+        print(f"       [WARNING] CPU detected! Swapping 4-bit base model for 16-bit original to prevent crashes.")
+        base_model_id = "Qwen/Qwen2.5-3B-Instruct"
+    
     print(f"       Base model  : {base_model_id}")
     print(f"       LoRA adapter: {ADAPTER_MODEL_ID}")
 

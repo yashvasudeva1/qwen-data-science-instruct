@@ -47,6 +47,11 @@ with open(cfg_path) as f:
     cfg = json.load(f)
 
 base_model_id = check("Read base_model_name_or_path", lambda: cfg["base_model_name_or_path"])
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+if device == "cpu" and "unsloth" in base_model_id and "bnb-4bit" in base_model_id:
+    base_model_id = "Qwen/Qwen2.5-3B-Instruct"
+
 print(f"     → {base_model_id}")
 
 # 2. Load tokenizer
