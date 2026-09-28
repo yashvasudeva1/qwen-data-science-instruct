@@ -211,7 +211,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {/* Domain Kicker - Anti-Slop Discipline: Clean typographic separator, unboxed */}
-            <div className="flex items-center justify-center gap-2 text-[11px] sm:text-xs font-mono tracking-wider text-slate-500 uppercase mb-3">
+            <div className="flex items-center justify-center gap-2 text-[11px] sm:text-xs font-mono tracking-wider text-slate-500 uppercase mb-3 mt-8 sm:mt-12">
               <span>STATISTICAL MECHANICS</span>
               <span aria-hidden="true" className="text-slate-300">·</span>
               <span>CAUSAL INFERENCE</span>
