@@ -16,6 +16,9 @@ async function startServer() {
 
   app.use(express.json({ limit: '20mb' }));
 
+  // Health check endpoint for UptimeRobot / cron jobs to keep server alive
+  app.get('/health', (req, res) => res.status(200).send('OK'));
+
   const ai = process.env.GEMINI_API_KEY
     ? new GoogleGenAI({
         apiKey: process.env.GEMINI_API_KEY,
