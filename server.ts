@@ -119,9 +119,23 @@ async function startServer() {
         } else {
           const errText = await hfResponse.text();
           console.warn(`Hugging Face inference error (${hfResponse.status}):`, errText);
+          
+          if (hfResponse.status === 503 && errText.toLowerCase().includes('loading')) {
+            return res.status(503).json({
+              error: 'The model is currently waking up on Hugging Face (Cold Start). Please try again in about 30 seconds.',
+              type: 'loading',
+            });
+          }
+
+          return res.status(500).json({
+            error: `Hugging Face API Error (${hfResponse.status}): ${errText}`,
+          });
         }
       } catch (hfErr: any) {
         console.error('Error invoking Hugging Face model:', hfErr?.message || hfErr);
+        return res.status(500).json({
+          error: `Failed to connect to Hugging Face API: ${hfErr?.message || hfErr}`,
+        });
       }
     }
 

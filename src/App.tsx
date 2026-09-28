@@ -375,7 +375,12 @@ export default function App() {
       });
 
       if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
+        let errStr = `Server returned ${res.status}`;
+        try {
+          const errData = await res.json();
+          if (errData.error) errStr = errData.error;
+        } catch(e) {}
+        throw new Error(errStr);
       }
 
       const data = await res.json();
@@ -400,18 +405,18 @@ export default function App() {
           return c;
         })
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to receive response:', err);
-      // Fallback message
-      const fallbackMessage: Message = {
+      
+      const errorMessage: Message = {
         id: `m_err_${Date.now()}`,
         role: 'assistant',
-        content: `I have processed your inquiry: "${text}".\n\nWhat would you like to explore next?`,
+        content: `⚠️ **Error connecting to Vegapunk DS Server**\n\n${err.message || 'The server encountered an error or timed out.'}`,
         timestamp: Date.now(),
-        modelUsed: selectedModel,
+        modelUsed: 'System Error',
       };
       setConversations((prev) =>
-        prev.map((c) => (c.id === targetConvId ? { ...c, messages: [...c.messages, fallbackMessage] } : c))
+        prev.map((c) => (c.id === targetConvId ? { ...c, messages: [...c.messages, errorMessage] } : c))
       );
     } finally {
       setIsLoading(false);
@@ -457,7 +462,12 @@ export default function App() {
       });
 
       if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
+        let errStr = `Server returned ${res.status}`;
+        try {
+          const errData = await res.json();
+          if (errData.error) errStr = errData.error;
+        } catch(e) {}
+        throw new Error(errStr);
       }
 
       const data = await res.json();
@@ -482,8 +492,18 @@ export default function App() {
           return c;
         })
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to regenerate response:', err);
+      const errorMessage: Message = {
+        id: `m_err_${Date.now()}`,
+        role: 'assistant',
+        content: `⚠️ **Error connecting to Vegapunk DS Server**\n\n${err.message || 'The server encountered an error or timed out.'}`,
+        timestamp: Date.now(),
+        modelUsed: 'System Error',
+      };
+      setConversations((prev) =>
+        prev.map((c) => (c.id === targetConvId ? { ...c, messages: [...c.messages, errorMessage] } : c))
+      );
     } finally {
       setIsLoading(false);
     }
