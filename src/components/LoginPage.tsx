@@ -26,7 +26,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignU
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(email || 'vasudevyash@gmail.com');
+    onLogin(email || 'user@example.com');
   };
 
   const handleQuickLogin = (providerEmail: string) => {
@@ -39,7 +39,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignU
       <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
         <div
           className="flex items-center gap-2 cursor-pointer group"
-          onClick={() => (onNavigateToHome ? onNavigateToHome() : onLogin('vasudevyash@gmail.com'))}
+          onClick={() => (onNavigateToHome ? onNavigateToHome() : onLogin('user@example.com'))}
           title="Back to home"
         >
           <VegapunkLogo variant="full" size={32} />
@@ -125,7 +125,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignU
               <div className="space-y-2.5">
                 <button
                   type="button"
-                  onClick={() => handleQuickLogin('vasudevyash@gmail.com')}
+                  onClick={() => handleQuickLogin('user@example.com')}
                   className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition-colors cursor-pointer"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24">

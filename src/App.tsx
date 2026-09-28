@@ -192,7 +192,9 @@ $$\\frac{N_{\\text{CUPED}}}{N_{\\text{standard}}} \\approx 1 - \\rho^2$$
 
 export default function App() {
   // Navigation View State: 'landing' | 'chat' | 'login' | 'signup'
-  const [currentView, setCurrentView] = useState<'landing' | 'chat' | 'login' | 'signup'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'chat' | 'login' | 'signup'>(() => {
+    return localStorage.getItem('vegapunk_user') ? 'chat' : 'landing';
+  });
   const [pendingPrompt, setPendingPrompt] = useState<string>('');
 
   // Core Chat State
@@ -209,7 +211,10 @@ export default function App() {
   });
 
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [user, setUser] = useState<UserProfile>(INITIAL_USER);
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    const saved = localStorage.getItem('vegapunk_user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [project, setProject] = useState<Project>(INITIAL_PROJECT);
   const selectedModel: VegapunkModel = 'vegapunk-3.7-datascience';
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -486,11 +491,10 @@ export default function App() {
 
   // Auth Handlers
   const handleLoginSuccess = (email: string) => {
-    setUser((prev) => ({
-      ...prev,
-      email,
-      name: email.split('@')[0].replace('.', ' ').replace(/^./, (str) => str.toUpperCase()) || 'User',
-    }));
+    const name = email.split('@')[0].replace('.', ' ').replace(/^./, (str) => str.toUpperCase()) || 'User';
+    const newUser = user ? { ...user, email, name } : { ...INITIAL_USER, email, name };
+    setUser(newUser);
+    localStorage.setItem('vegapunk_user', JSON.stringify(newUser));
     setCurrentView('chat');
     if (pendingPrompt) {
       const promptToSend = pendingPrompt;
@@ -502,11 +506,10 @@ export default function App() {
   };
 
   const handleSignUpSuccess = (email: string) => {
-    setUser((prev) => ({
-      ...prev,
-      email,
-      name: email.split('@')[0].replace('.', ' ').replace(/^./, (str) => str.toUpperCase()) || 'New User',
-    }));
+    const name = email.split('@')[0].replace('.', ' ').replace(/^./, (str) => str.toUpperCase()) || 'New User';
+    const newUser = user ? { ...user, email, name } : { ...INITIAL_USER, email, name };
+    setUser(newUser);
+    localStorage.setItem('vegapunk_user', JSON.stringify(newUser));
     setCurrentView('chat');
     if (pendingPrompt) {
       const promptToSend = pendingPrompt;
@@ -515,6 +518,12 @@ export default function App() {
         handleSendMessage(promptToSend, []);
       }, 300);
     }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('vegapunk_user');
+    setCurrentView('landing');
   };
 
   // Render Landing Page View
@@ -565,12 +574,12 @@ export default function App() {
         onDeleteConversation={handleDeleteConversation}
         onRenameConversation={handleRenameConversation}
         onToggleStarConversation={handleToggleStarConversation}
-        user={user}
+        user={user!}
         isOpen={isSidebarOpen}
         onToggleOpen={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenProjects={() => setIsProjectsOpen(true)}
-        onLogout={() => setCurrentView('landing')}
+        onLogout={handleLogout}
         onGoToHome={() => setCurrentView('landing')}
       />
 
@@ -756,8 +765,14 @@ export default function App() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        user={user}
-        onUpdateUser={(updated) => setUser((prev) => ({ ...prev, ...updated }))}
+        user={user!}
+        onUpdateUser={(updated) => {
+          if (user) {
+            const newUser = { ...user, ...updated };
+            setUser(newUser);
+            localStorage.setItem('vegapunk_user', JSON.stringify(newUser));
+          }
+        }}
       />
 
       <ProjectsModal
