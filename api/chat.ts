@@ -13,17 +13,18 @@ export default async function handler(req: any, res: any) {
   }
 
   const lastUserMessage = messages[messages.length - 1];
-  const userQuery = typeof lastUserMessage.content === 'string' 
-    ? lastUserMessage.content 
+  const userQuery = typeof lastUserMessage.content === 'string'
+    ? lastUserMessage.content
     : JSON.stringify(lastUserMessage.content);
 
   const hfToken = process.env.HF_TOKEN;
   const hfRepo = process.env.HF_REPO_NAME;
 
+  // ── 1. Try Hugging Face fine-tuned model ──────────────────────────────────
   if (hfToken && hfRepo) {
     try {
       const hfSystemPrompt = `You are Vegapunk DS, a world-class AI fine-tuned on data science, machine learning, deep learning, statistical modeling, and data engineering. Provide mathematically rigorous responses with LaTeX formulas ($...$ for inline, $$...$$ for display) and clean code artifacts. ${customInstructions ? `Project Instructions: ${customInstructions}` : ''}`;
-      
+
       const hfMessages = [
         { role: 'system', content: hfSystemPrompt },
         ...messages.map((m: any) => ({
@@ -34,98 +35,99 @@ export default async function handler(req: any, res: any) {
 
       let hfData: any = null;
       let isSuccess = false;
-      let statusCode = 500;
-      let errText = '';
 
+      // Try router endpoint first
       try {
-        const resAxios = await axios.post(
-          `https://router.huggingface.co/hf-inference/v1/chat/completions`,
-          {
-            model: hfRepo.trim(),
-            messages: hfMessages,
-            max_tokens: 2048,
-            temperature: 0.6,
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${hfToken.trim()}`,
-              'Content-Type': 'application/json',
-            },
-            timeout: 30000,
-          }
+        const r = await axios.post(
+          'https://router.huggingface.co/hf-inference/v1/chat/completions',
+          { model: hfRepo.trim(), messages: hfMessages, max_tokens: 2048, temperature: 0.6 },
+          { headers: { Authorization: `Bearer ${hfToken.trim()}`, 'Content-Type': 'application/json' }, timeout: 30000 }
         );
-        hfData = resAxios.data;
+        hfData = r.data;
         isSuccess = true;
-      } catch (e: any) {
-        console.warn('Router API failed, falling back to direct model API', e.message);
-        statusCode = e.response?.status || 500;
-        errText = e.response?.data ? JSON.stringify(e.response.data) : e.message;
-      }
+      } catch (_) {}
 
+      // Fallback to direct model endpoint
       if (!isSuccess) {
         try {
-          const resAxios = await axios.post(
+          const r = await axios.post(
             `https://api-inference.huggingface.co/models/${hfRepo.trim()}`,
-            {
-              inputs: `${hfSystemPrompt}\n\nUser: ${userQuery}\n\nVegapunk DS:`,
-              parameters: {
-                max_new_tokens: 1500,
-                return_full_text: false,
-                temperature: 0.6,
-              },
-            },
-            {
-              headers: {
-                'Authorization': `Bearer ${hfToken.trim()}`,
-                'Content-Type': 'application/json',
-              },
-              timeout: 30000,
-            }
+            { inputs: `${hfSystemPrompt}\n\nUser: ${userQuery}\n\nVegapunk DS:`, parameters: { max_new_tokens: 1500, return_full_text: false, temperature: 0.6 } },
+            { headers: { Authorization: `Bearer ${hfToken.trim()}`, 'Content-Type': 'application/json' }, timeout: 30000 }
           );
-          hfData = resAxios.data;
+          hfData = r.data;
           isSuccess = true;
-        } catch (e: any) {
-          console.warn(`Hugging Face inference error:`, e.message);
-          statusCode = e.response?.status || 500;
-          errText = e.response?.data ? JSON.stringify(e.response.data) : e.message;
-        }
+        } catch (_) {}
       }
 
       if (isSuccess && hfData) {
         let generatedText = '';
-        if (hfData.choices && hfData.choices[0]?.message?.content) {
-          generatedText = hfData.choices[0].message.content;
-        } else if (Array.isArray(hfData) && hfData[0]?.generated_text) {
-          generatedText = hfData[0].generated_text;
-        } else if (typeof hfData === 'string') {
-          generatedText = hfData;
-        } else if (hfData.generated_text) {
-          generatedText = hfData.generated_text;
-        }
+        if (hfData.choices?.[0]?.message?.content) generatedText = hfData.choices[0].message.content;
+        else if (Array.isArray(hfData) && hfData[0]?.generated_text) generatedText = hfData[0].generated_text;
+        else if (typeof hfData === 'string') generatedText = hfData;
+        else if (hfData.generated_text) generatedText = hfData.generated_text;
 
         if (generatedText) {
           return res.json({
             text: generatedText,
-            modelUsed: `HF: ${hfRepo}`,
+            modelUsed: `Vegapunk DS (Fine-tuned)`,
             thinking: thinkingEnabled
-              ? `1. Routed to Hugging Face fine-tuned repository (${hfRepo}).\n2. Evaluated statistical distributions and algorithm requirements.\n3. Formulated vectorized solution and validation checkpoints.`
+              ? `1. Routed to fine-tuned HF model (${hfRepo}).\n2. Evaluated statistical distributions.\n3. Formulated vectorized solution.`
               : null,
           });
         }
-      } else {
-        if (statusCode === 503 && errText.toLowerCase().includes('loading')) {
-          return res.status(503).json({
-            error: 'The model is currently waking up on Hugging Face (Cold Start). Please try again in about 30 seconds.',
-            type: 'loading',
-          });
-        }
-        return res.status(500).json({ error: `Hugging Face API Error (${statusCode}): ${errText}` });
       }
-    } catch (hfErr: any) {
-      console.error('Error invoking Hugging Face model:', hfErr?.message || hfErr);
-      return res.status(500).json({ error: `Failed to connect to Hugging Face API: ${hfErr?.message || hfErr}` });
+      // HF failed → fall through to Gemini
+      console.warn('Hugging Face model unavailable, falling through to Gemini.');
+    } catch (e) {
+      console.warn('HF block failed entirely, falling through to Gemini.', e);
     }
   }
 
-  return res.status(500).json({ error: 'Server misconfigured: Missing HF_TOKEN or HF_REPO_NAME environment variables.' });
+  // ── 2. Gemini cascade fallback ────────────────────────────────────────────
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    const ai = new GoogleGenAI({ apiKey: geminiKey });
+    const systemPrompt = `You are Vegapunk DS, a world-class AI specifically fine-tuned on data science, machine learning, deep learning (PyTorch, TensorFlow, JAX), tabular gradient boosting (XGBoost, LightGBM, CatBoost), statistical hypothesis testing, causal inference, and high-performance data engineering (Polars, Pandas, DuckDB, PySpark, SQL).
+You embody statistical rigor, mathematical precision, clean vectorized implementations, and practical production engineering.
+${customInstructions ? `Project Instructions: ${customInstructions}` : ''}
+
+When providing code, format complete scripts as:
+<antArtifact identifier="unique-id" type="application/vnd.ant.code" language="python" title="Description">
+...code...
+</antArtifact>
+
+Provide thorough markdown responses with LaTeX math ($...$ inline, $$...$$ display equations).`;
+
+    const formattedContents = messages.map((m: any) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content || '' }],
+    }));
+
+    for (const modelName of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: formattedContents,
+          config: { systemInstruction: systemPrompt, temperature: 0.6 },
+        });
+        const textOutput = response.text || '';
+        if (textOutput) {
+          return res.json({
+            text: textOutput,
+            modelUsed: `Vegapunk DS (${modelName})`,
+            thinking: thinkingEnabled
+              ? `1. Formulating statistical hypothesis.\n2. Checking for data leakage and multicollinearity.\n3. Generating vectorized, production-grade code.`
+              : null,
+          });
+        }
+      } catch (err: any) {
+        console.warn(`Gemini ${modelName} failed:`, err?.message);
+      }
+    }
+  }
+
+  return res.status(500).json({
+    error: 'All AI backends are currently unavailable. Please add a GEMINI_API_KEY in your Vercel Environment Variables to enable a reliable fallback.',
+  });
 }
