@@ -60,22 +60,27 @@ async function startServer() {
           })),
         ];
 
-        let hfResponse = await fetch(`https://router.huggingface.co/hf-inference/v1/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${hfToken.trim()}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: hfRepo.trim(),
-            messages: hfMessages,
-            max_tokens: 2048,
-            temperature: 0.6,
-          }),
-        });
+        let hfResponse: Response | null = null;
+        try {
+          hfResponse = await fetch(`https://router.huggingface.co/hf-inference/v1/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${hfToken.trim()}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: hfRepo.trim(),
+              messages: hfMessages,
+              max_tokens: 2048,
+              temperature: 0.6,
+            }),
+          });
+        } catch (e) {
+          console.warn('Router API failed with network error, falling back to direct model API', e);
+        }
 
-        // If router is not supported for this repo, fallback to direct HF inference endpoint
-        if (!hfResponse.ok) {
+        // If router is not supported for this repo or threw a network error, fallback to direct HF inference endpoint
+        if (!hfResponse || !hfResponse.ok) {
           hfResponse = await fetch(`https://api-inference.huggingface.co/models/${hfRepo.trim()}`, {
             method: 'POST',
             headers: {
