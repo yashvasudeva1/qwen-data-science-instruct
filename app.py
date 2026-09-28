@@ -227,34 +227,47 @@ def run_inference(tokenizer, model, messages: list, max_new_tokens: int = MAX_NE
     return tokenizer.decode(generated, skip_special_tokens=True).strip()
 
 
-# ── Flask API ──────────────────────────────────────────────────────────────────
+# ── FastAPI / Gradio API ───────────────────────────────────────────────────────
 
-app = Flask(__name__)
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import uvicorn
+import gradio as gr
+
+api_app = FastAPI()
 _tokenizer = None
 _model = None
 
-
-@app.route("/health", methods=["GET"])
+@api_app.get("/health")
 def health():
-    return jsonify({"status": "ok", "adapter": ADAPTER_MODEL_ID}), 200
+    return {"status": "ok", "adapter": ADAPTER_MODEL_ID}
 
-
-@app.route("/generate", methods=["POST"])
-def generate():
-    data = request.get_json(force=True)
+@api_app.post("/generate")
+async def generate(request: Request):
+    data = await request.json()
     messages = data.get("messages", [])
     max_tokens = int(data.get("max_new_tokens", MAX_NEW_TOKENS))
 
     if not messages:
-        return jsonify({"error": "messages is required"}), 400
+        return JSONResponse({"error": "messages is required"}, status_code=400)
 
     try:
         text = run_inference(_tokenizer, _model, messages, max_tokens)
-        return jsonify({"text": text, "model": ADAPTER_MODEL_ID})
+        return {"text": text, "model": ADAPTER_MODEL_ID}
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
 
+# Create a dummy Gradio interface to satisfy the free Hugging Face Gradio SDK
+demo = gr.Interface(
+    fn=lambda x: "API Server is running! Send POST requests to /generate",
+    inputs="text",
+    outputs="text",
+    title="Vegapunk DS API",
+    description="This Space hosts a headless API. Use the /generate endpoint."
+)
+
+app = gr.mount_gradio_app(api_app, demo, path="/")
 
 # ── Startup ────────────────────────────────────────────────────────────────────
 
@@ -271,4 +284,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print(f"Starting inference server on port {PORT}...")
-    app.run(host="0.0.0.0", port=PORT, debug=False)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
