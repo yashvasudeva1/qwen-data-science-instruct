@@ -1,0 +1,7 @@
+{
+  "name": "Vegapunk AI",
+  "description": "A high-fidelity replica of Claude.ai reimagined as Vegapunk with blue styling, responsive design, fine-tuned data science intelligence, and mathematical precision.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

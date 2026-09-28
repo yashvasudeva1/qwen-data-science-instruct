@@ -1,1 +1,16 @@
-/model
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Models and Virtual Envs
+model/
+merged_model/
+gguf/
+llama.cpp/
+venv/
+.env
