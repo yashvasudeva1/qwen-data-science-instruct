@@ -160,12 +160,17 @@ print(tokenizer.decode(outputs[0][inputs.shape[1]:], skip_special_tokens=True))
 
 ## Demo
 
-[![Live Demo / Colab Notebook](https://img.shields.io/badge/Demo-Interactive_Notebook-brightgreen?logo=googlecolab)](https://github.com/yashvasudeva1/qwen-data-science-instruct)
+<p align="center">
+  <img src="demo.gif" alt="Fine-Tuned Model Demo Walkthrough" width="100%">
+</p>
 
-> *Demo Walkthrough Placeholder: Replace with a 15-second terminal GIF or side-by-side output comparison demonstrating base vs. fine-tuned response.*
+<p align="center">
+  <em>Interactive inference walkthrough demonstrating domain-adapted code completion with Qwen2.5-3B-DS.</em><br/>
+  <a href="demo.mp4">▶ <strong>Watch High-Definition Video (demo.mp4)</strong></a>
+</p>
 
 ```text
-[User Prompt]    -> "Group transaction DataFrame by user_id and compute rolling 7-day spend sum."
-[Base Output]    -> Verbose generic loops with manual date parsing and missing edge cases.
-[Fine-Tuned]     -> Clean, vectorized df.set_index('date').groupby('user_id')['amount'].rolling('7D').sum() in < 1.5s.
+[User Prompt] -> "Group transaction DataFrame by user_id and compute rolling 7-day spend sum."
+[Base Model]  -> Verbose generic loops with manual date parsing and unhandled edge cases.
+[Fine-Tuned]  -> Clean, vectorized df.set_index('date').groupby('user_id')['amount'].rolling('7D').sum() in < 1.5s.
 ```
