@@ -165,8 +165,8 @@ print(tokenizer.decode(outputs[0][inputs.shape[1]:], skip_special_tokens=True))
 </p>
 
 <p align="center">
-  <em>Interactive inference walkthrough demonstrating domain-adapted code completion with Qwen2.5-3B-DS.</em><br/>
-  <a href="demo.mp4">▶ <strong>Watch High-Definition Video (demo.mp4)</strong></a>
+  <em>Overview of training dynamics, response-only loss masking, and benchmark evaluation for Qwen2.5-3B-DS.</em><br/>
+  <a href="qwen-data-science-instruct.mp4">▶ <strong>Watch High-Definition 1080p Video (qwen-data-science-instruct.mp4)</strong></a>
 </p>
 
 ```text
